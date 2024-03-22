@@ -3,7 +3,6 @@ import select
 
 
 class FileService:
-
     def __init__(self, file_name, sock):
         self.file_name = file_name
         self.socket = sock
@@ -27,15 +26,16 @@ class FileService:
         with open(self.file_name, 'ab') as file:
             file_data = bytes()
             current_file_length = file.tell()
-            print(current_file_length)
             while True:
                 ready = select.select([self.socket], [], [], 20)
                 if len(ready[0]) != 0:
                     read_data = self.socket.recv(8192)
                     current_file_length += len(read_data)
                     file.write(read_data)
+                    print(f"Received: {current_file_length}, expect: {real_file_length}")
                 else:
                     raise socket.error
+
                 if current_file_length == real_file_length:
                     break
 
@@ -45,7 +45,8 @@ class FileService:
     def get_current_file_size(self):
         try:
             with open(self.file_name, 'rb') as file:
-                return len(file.read())
+                from server.server import Server
+                return len(file.read()) if Server.OLD_USER_CONNECTED else 0
         except FileNotFoundError:
             return 0
 

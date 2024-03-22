@@ -5,9 +5,11 @@ from services import FileService, read_socket
 
 class Server:
     ALLOWED_COMMANDS = ['ECHO', 'TIME', 'EXIT', 'DOWNLOAD', 'UPLOAD']
+    OLD_USER_CONNECTED = False
 
     def __init__(self, address='localhost', port=8081):
         self.address = address
+        self.last_connected_user = None
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connection = None
@@ -22,6 +24,11 @@ class Server:
     def accept_connection(self):
         while True:
             self.connection, self.address = self.socket.accept()
+            if self.address == self.last_connected_user:
+                self.OLD_USER_CONNECTED = True
+            else:
+                self.OLD_USER_CONNECTED = False
+
             print(f'CONNECTION FROM {self.address[0]}')
             self.get_requests()
 
@@ -33,6 +40,7 @@ class Server:
                     break
             except socket.error:
                 print('CONNECTION LOST')
+                self.last_connected_user = self.address
                 break
 
     def handle_requests(self, request):
