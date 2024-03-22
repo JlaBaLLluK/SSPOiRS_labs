@@ -15,21 +15,29 @@ class FileService:
         self.receiver_address = receiver_address
 
     def send_file(self):
-        with open(self.file_name, 'rb') as file:
-            file_len = len(file.read())
-            if send_data(self.socket, self.receiver_address, str(file_len).encode()) == -1:
-                return
+        try:
+            with open(self.file_name, 'rb') as file:
+                file_len = len(file.read())
+                if send_data(self.socket, self.receiver_address, str(file_len).encode()) == -1:
+                    return
 
-            file.seek(0)
-            part_of_file = file.read(8192)
-            packet_num = 0
-            while part_of_file:
-                send_data(self.socket, self.receiver_address, part_of_file, packet_num)
+                file.seek(0)
                 part_of_file = file.read(8192)
-                packet_num += 1
+                packet_num = 0
+                while part_of_file:
+                    send_data(self.socket, self.receiver_address, part_of_file, packet_num)
+                    part_of_file = file.read(8192)
+                    packet_num += 1
+        except FileNotFoundError:
+            print("File doesn't exist!")
+            send_data(self.socket, self.receiver_address, str(-1).encode())
 
     def get_file(self):
         file_len = int(get_data(self.socket)[0].decode())
+        if file_len == -1:
+            print('Unable to receive file!')
+            return
+
         with open(self.file_name, 'wb') as file:
             file_data = bytes()
             while True:
@@ -90,8 +98,9 @@ def wait_acknowledge(socket, encoded_data, packet_num, address):
             send_data(socket, address, encoded_data, packet_num)
             print(f'Got {accepted_sn}, expected {sn}. It is wrong!')
         else:
-            break
+            return
     else:
+        print('RAISING')
         raise sck.error
 
 

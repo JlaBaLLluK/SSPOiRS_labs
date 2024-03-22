@@ -30,13 +30,11 @@ class Server:
         command = request.split()[0]
         if command == 'ECHO':
             print('ECHO command')
-            if send_data(self.socket, self.client_address, ' '.join(request.split()[1:]).encode()) == -1:
-                return
+            send_data(self.socket, self.client_address, ' '.join(request.split()[1:]).encode())
         elif command == 'TIME':
             print('TIME command')
             time = (datetime.datetime.now() - self.creation_time).seconds
-            if send_data(self.socket, self.client_address, f'{time} seconds'.encode()) == -1:
-                return
+            send_data(self.socket, self.client_address, f'{time} seconds'.encode())
         elif command == 'DOWNLOAD':
             print('DOWNLOAD started')
             fs = FileService(request.split()[1], self.socket, self.client_address)
