@@ -3,8 +3,9 @@ import time
 import socket as sck
 
 MAX_SN_SIZE = 10
-# PACKET_LOST = False
-# LOST_PACKETS = ['0000000852', '0000000027', '0000000358']
+
+PACKET_TO_LOSE = ['0000000852', '0000000027', '0000000358']
+NEED_TO_LOSE_PACKET = True
 
 
 class FileService:
@@ -57,17 +58,15 @@ def make_packet(packet_num, encoded_data):
 
 def send_data(socket, address, encoded_data, packet_num=0):
     packet, sn = make_packet(packet_num, encoded_data)
-    socket.sendto(packet, address)
-    # global PACKET_LOST
-    # if sn in LOST_PACKETS and not PACKET_LOST:
-    #     print('PACKET LOST')
-    #     PACKET_LOST = True
-    # else:
-    #     socket.sendto(packet, address)
+    # socket.sendto(packet, address)
+    if sn in PACKET_TO_LOSE and NEED_TO_LOSE_PACKET:
+        print('LOST PACKET (PACKET TO LOSE)')
+    else:
+        socket.sendto(packet, address)
     try:
         wait_acknowledge(socket, encoded_data, packet_num, address)
     except sck.error:
-        print('Unable to send data!')
+        print('Unable to send data!------------------')
         return -1
 
 
@@ -82,21 +81,26 @@ def get_data(socket, read_size=1024):
 def wait_acknowledge(socket, encoded_data, packet_num, address):
     for i in range(1, 6):
         timeout = i * 10
-        # global PACKET_LOST
         read_sockets, _, _ = select.select([socket], [], [], timeout)
+
+        global NEED_TO_LOSE_PACKET
+
         if len(read_sockets) == 0:
-            print("Didn't receive acknowledge!")
+            print(f"Didn't receive acknowledge! Resend packet {packet_num}")
+
+            NEED_TO_LOSE_PACKET = False
+
             send_data(socket, address, encoded_data, packet_num)
-            # PACKET_LOST = False
             break
 
-        accepted_sn, address = socket.recvfrom(MAX_SN_SIZE)
-        accepted_sn = accepted_sn.decode()
+        accepted_sn, address = socket.recvfrom(100)
+        NEED_TO_LOSE_PACKET = True
+        accepted_sn = accepted_sn[:MAX_SN_SIZE].decode()
         sn = make_sn(packet_num)
         if accepted_sn != sn:
             time.sleep(timeout)
-            send_data(socket, address, encoded_data, packet_num)
             print(f'Got {accepted_sn}, expected {sn}. It is wrong!')
+            send_data(socket, address, encoded_data, packet_num)
         else:
             return
     else:
