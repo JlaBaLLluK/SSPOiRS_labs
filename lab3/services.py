@@ -58,7 +58,6 @@ def make_packet(packet_num, encoded_data):
 
 def send_data(socket, address, encoded_data, packet_num=0):
     packet, sn = make_packet(packet_num, encoded_data)
-    # socket.sendto(packet, address)
     if sn in PACKET_TO_LOSE and NEED_TO_LOSE_PACKET:
         print('LOST PACKET (PACKET TO LOSE)')
     else:
@@ -66,7 +65,7 @@ def send_data(socket, address, encoded_data, packet_num=0):
     try:
         wait_acknowledge(socket, encoded_data, packet_num, address)
     except sck.error:
-        print('Unable to send data!------------------')
+        print('Unable to send data!')
         return -1
 
 
