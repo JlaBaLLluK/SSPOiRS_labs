@@ -1,7 +1,7 @@
 import socket
 import time
 
-from services import FileService, read_socket
+from services.services import FileService, read_socket
 
 
 class Client:
@@ -59,16 +59,14 @@ class Client:
     def download_handler(self, request):
         self.socket.send(request.encode())
         fs = FileService(request.split()[1], self.socket)
-        current_file_size = fs.get_current_file_size()
-        self.socket.send((str(current_file_size) + '\n').encode())
+        fs.get_data_start_position()
         fs.receive_file()
 
     def upload_handler(self, request):
         self.socket.send(request.encode())
         fs = FileService(request.split()[1], self.socket)
-        current_file_size = int(read_socket(self.socket))
-        print(f'Send will be started from {current_file_size} bytes')
-        fs.send_file(current_file_size)
+        print(f'Send will be started from {fs.data_start_position} bytes')
+        fs.send_file()
 
     def exit_handler(self, request):
         self.socket.send(request.encode())

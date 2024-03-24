@@ -1,6 +1,6 @@
 import socket
 from datetime import datetime
-from services import FileService, read_socket
+from services.services import FileService, read_socket
 
 
 class Server:
@@ -57,15 +57,13 @@ class Server:
         elif command == 'DOWNLOAD':
             print('DOWNLOAD started')
             fs = FileService(request.split()[1], self.connection)
-            current_file_size = int(read_socket(self.connection))
-            print(f'Send will be started from {current_file_size} bytes')
-            fs.send_file(current_file_size)
+            print(f'Send will be started from {fs.data_start_position} bytes')
+            fs.send_file()
             print('DOWNLOAD finished')
         elif command == 'UPLOAD':
             print('UPLOAD started')
             fs = FileService(request.split()[1], self.connection)
-            current_file_size = fs.get_current_file_size()
-            self.connection.send((str(current_file_size) + '\n').encode())
+            fs.get_data_start_position()
             fs.receive_file()
             print('UPLOAD finished')
         else:
