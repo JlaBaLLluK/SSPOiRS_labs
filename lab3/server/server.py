@@ -1,7 +1,7 @@
 import socket
 import datetime
 
-from services import FileService, get_data, send_data
+from services import FileService, get_data, send_data, MAX_SN_SIZE
 
 
 class Server:
@@ -21,8 +21,9 @@ class Server:
 
     def get_requests(self):
         while True:
-            request, self.client_address = get_data(self.socket)
-            if self.handle_requests(request.decode()) == -1:
+            packet, self.client_address = get_data(self.socket)
+            request = packet[MAX_SN_SIZE:].decode()
+            if self.handle_requests(request) == -1:
                 self.socket.close()
                 break
 

@@ -41,11 +41,18 @@ class FileService:
 
         with open(self.file_name, 'wb') as file:
             file_data = bytes()
+            received_sns = []
             while True:
                 packet, address = get_data(self.socket, 10000)
-                file_data += packet
-                file.write(packet)
-                print(f"Received {len(file_data)}, expect {file_len}")
+                sn = packet[:MAX_SN_SIZE].decode()
+                if sn in received_sns:
+                    continue
+
+                part_of_file = packet[MAX_SN_SIZE:]
+                file_data += part_of_file
+                file.write(part_of_file)
+                received_sns.append(sn)
+                print(f"Received {len(file_data)}, expect {file_len}, sn - {sn}")
                 if len(file_data) == file_len:
                     break
 
@@ -58,10 +65,10 @@ def make_packet(packet_num, encoded_data):
 
 def send_data(socket, address, encoded_data, packet_num=0):
     packet, sn = make_packet(packet_num, encoded_data)
-    if sn in PACKET_TO_LOSE and NEED_TO_LOSE_PACKET:
-        print('LOST PACKET (PACKET TO LOSE)')
-    else:
-        socket.sendto(packet, address)
+    # if sn in PACKET_TO_LOSE and NEED_TO_LOSE_PACKET:
+    #     print('LOST PACKET (PACKET TO LOSE)')
+    # else:
+    socket.sendto(packet, address)
     try:
         wait_acknowledge(socket, encoded_data, packet_num, address)
     except sck.error:
@@ -72,9 +79,8 @@ def send_data(socket, address, encoded_data, packet_num=0):
 def get_data(socket, read_size=1024):
     packet, address = socket.recvfrom(read_size)
     sn = packet[:MAX_SN_SIZE]
-    data = packet[MAX_SN_SIZE:]
     socket.sendto(sn, address)
-    return data, address
+    return packet, address
 
 
 def wait_acknowledge(socket, encoded_data, packet_num, address):
@@ -93,6 +99,7 @@ def wait_acknowledge(socket, encoded_data, packet_num, address):
             break
 
         accepted_sn, address = socket.recvfrom(100)
+        print(f"Received sn {accepted_sn.decode()}")
         NEED_TO_LOSE_PACKET = True
         accepted_sn = accepted_sn[:MAX_SN_SIZE].decode()
         sn = make_sn(packet_num)

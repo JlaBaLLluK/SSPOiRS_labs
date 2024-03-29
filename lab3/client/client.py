@@ -1,5 +1,5 @@
 import socket
-from services import FileService, send_data, get_data
+from services import FileService, send_data, get_data, MAX_SN_SIZE
 
 
 class Client:
@@ -38,7 +38,7 @@ class Client:
         if send_data(self.socket, (self.address, self.port), request.encode()) == -1:
             return
 
-        print(get_data(self.socket)[0].decode())
+        print(get_data(self.socket)[0][MAX_SN_SIZE:].decode())
 
     def download_handler(self, request):
         if send_data(self.socket, (self.address, self.port), request.encode()) == -1:
