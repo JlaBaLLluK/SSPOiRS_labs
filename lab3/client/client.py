@@ -1,6 +1,8 @@
 import socket
 from services import FileService, send_data, get_data, MAX_SN_SIZE
 
+# 192.168.208.91
+
 
 class Client:
     ALLOWED_COMMANDS = ['ECHO', 'TIME', 'EXIT', 'DOWNLOAD', 'UPLOAD']
